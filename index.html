@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Javier Antón · Desarrollador web</title>
+<meta name="description" content="Portfolio y CV de Javier Antón, desarrollador web en Madrid: HTML, CSS, JavaScript, Python y Java.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Javier Antón · Desarrollador web">
+<meta property="og:description" content="Portfolio y CV de Javier Antón, desarrollador web en Madrid.">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#000000">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: lienzo WebGL fijo a pantalla completa; el scroll vertical dirige las escenas; el texto flota encima */
+  :root {
+    --bg: #000;
+    --fg: #f4f3fb;
+    --dim: #aaa8be;
+    --violet: #7b3dff;
+    --glow: #b9a0ff;
+    --font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bg); }
+  body {
+    color: var(--fg);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  #track { height: 1000vh; }
+  #gl {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    display: block; background: var(--bg);
+  }
+  .stage {
+    position: fixed; inset: 0; pointer-events: none;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .t {
+    position: absolute; left: 0; right: 0;
+    padding-left: inherit; padding-right: inherit;
+    text-align: center; will-change: opacity, filter, transform;
+  }
+  .title {
+    top: 50%; transform: translateY(-50%);
+    font-weight: 700; letter-spacing: -0.035em; line-height: 1.02;
+    font-size: clamp(2.3rem, 9.4vw, 5.6rem);
+    text-wrap: balance;
+  }
+  .title span { display: block; }
+  .sub {
+    top: 76%;
+    font-size: clamp(0.95rem, 3.6vw, 1.25rem);
+    font-weight: 500; letter-spacing: -0.005em; color: #cfcde0;
+    text-wrap: balance;
+  }
+  .hint {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh);
+    font-size: 0.95rem; color: var(--dim); letter-spacing: 0.01em;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .hint i {
+    display: block; width: 1px; height: 28px;
+    background: linear-gradient(var(--dim), transparent);
+    transform-origin: top; animation: drip 1.8s ease-in-out infinite;
+  }
+  @keyframes drip { 0% { transform: scaleY(0); opacity: 0 } 40% { opacity: 1 } 100% { transform: scaleY(1); opacity: 0 } }
+  /* ---------- CV ---------- */
+  #cv {
+    position: relative; z-index: 2;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: 26vh; padding-bottom: calc(14vh + env(safe-area-inset-bottom, 0px));
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: clamp(88px, 16vh, 150px); }
+  .sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  @media (min-width: 820px) { .projects { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sec { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); gap: 56px; } .sec > header { position: sticky; top: 14vh; align-self: start; } }
+  .eyebrow { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); margin: 0 0 14px; }
+  .sec h2 {
+    margin: 0; font-weight: 700; letter-spacing: -0.04em; line-height: 1;
+    font-size: clamp(2.3rem, 8.4vw, 4rem); text-wrap: balance;
+  }
+  .rule { display: block; height: 1px; width: 72px; margin-top: 22px; background: linear-gradient(90deg, var(--glow), transparent); transform-origin: left; transform: scaleX(0); transition: transform 1.2s 0.3s cubic-bezier(.2,.7,.2,1); }
+  .in .rule, .rule.in { transform: scaleX(1); }
+  .lead { margin: 0 0 22px; font-size: clamp(1.25rem, 4.6vw, 2rem); line-height: 1.22; letter-spacing: -0.02em; font-weight: 500; color: var(--fg); text-wrap: pretty; }
+  .lead.dim { color: var(--dim); margin-bottom: 0; }
+  .item { padding: 28px 0; border-top: 1px solid rgba(185, 160, 255, 0.16); }
+  .item:last-child { padding-bottom: 0; }
+  .when { font-family: var(--font-mono); font-size: 0.76rem; letter-spacing: 0.16em; color: var(--glow); text-transform: uppercase; margin: 0 0 12px; font-variant-numeric: tabular-nums; }
+  .item h3 { margin: 0; font-size: clamp(1.35rem, 5vw, 1.9rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; text-wrap: balance; }
+  .role { display: block; margin: 8px 0 0; font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .item ul { margin: 18px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .item li, .item p.d { color: #cfcde0; font-size: 1.02rem; line-height: 1.55; padding-left: 20px; position: relative; margin: 0; }
+  .item p.d { padding-left: 0; margin-top: 14px; }
+  .item li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 8px; height: 1px; background: var(--glow); }
+  .skills { display: flex; flex-direction: column; gap: 40px; }
+  .skills h3 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
+  .skill { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 18px 0; border-top: 1px solid rgba(185, 160, 255, 0.16); }
+  @media (min-width: 560px) { .skill { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: 24px; align-items: baseline; } }
+  .skill b { font-size: clamp(1.2rem, 4.4vw, 1.6rem); font-weight: 700; letter-spacing: -0.03em; }
+  .skill span { color: #bdbbd2; font-size: 0.98rem; line-height: 1.5; }
+  .contact { display: flex; flex-direction: column; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border-top: 1px solid rgba(185, 160, 255, 0.16); flex-wrap: wrap; }
+  .row small { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); display: block; margin-bottom: 4px; }
+  .row .v { font-size: clamp(1.1rem, 4.6vw, 1.6rem); font-weight: 600; letter-spacing: -0.02em; color: var(--fg); text-decoration: none; overflow-wrap: anywhere; }
+  a.v::after { content: " ↗"; color: var(--glow); font-weight: 400; }
+  a.v:hover, a.v:focus-visible { color: var(--glow); outline: none; }
+  /* Marcadores de texto pendiente: se ven a propósito para no publicarlos sin rellenar */
+  .ph { color: #ffd479; border-bottom: 1px dashed #ffd479; }
+  /* ---------- Proyectos ---------- */
+  .projects { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .proj { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 20px; border: 1px solid rgba(185, 160, 255, 0.22); background: linear-gradient(160deg, rgba(40, 20, 90, 0.38), rgba(8, 6, 20, 0.55)); backdrop-filter: blur(8px); }
+  .shot { aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(185, 160, 255, 0.3); color: var(--dim); font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .proj h3 { margin: 0; font-size: clamp(1.3rem, 4.6vw, 1.6rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+  .proj p { margin: 0; color: #cfcde0; font-size: 1rem; line-height: 1.5; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .tags li { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--glow); border: 1px solid rgba(185, 160, 255, 0.3); border-radius: 999px; padding: 4px 10px; }
+  .plinks { display: flex; gap: 10px; margin-top: auto; flex-wrap: wrap; }
+  .btn {
+    color: var(--fg); text-decoration: none; font: inherit; font-size: 0.9rem; cursor: pointer;
+    border: 1px solid rgba(185, 160, 255, 0.45); padding: 8px 16px; border-radius: 999px;
+    background: rgba(10, 8, 24, 0.35); backdrop-filter: blur(6px); transition: background 0.2s, border-color 0.2s;
+  }
+  .btn:hover, .btn:focus-visible { background: rgba(123, 61, 255, 0.35); border-color: var(--glow); outline: none; }
+  .btn.solid { background: var(--violet); border-color: var(--violet); }
+  .btn.solid:hover, .btn.solid:focus-visible { background: #8f5bff; }
+  /* ---------- Formulario ---------- */
+  .form { display: flex; flex-direction: column; gap: 14px; padding-top: 24px; border-top: 1px solid rgba(185, 160, 255, 0.16); }
+  .form label { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); }
+  .form input, .form textarea {
+    font: inherit; font-family: var(--font-display); font-size: 1rem; letter-spacing: 0; text-transform: none; color: var(--fg);
+    background: rgba(10, 8, 24, 0.5); border: 1px solid rgba(185, 160, 255, 0.25); border-radius: 12px; padding: 12px 14px;
+  }
+  .form input:focus, .form textarea:focus { outline: none; border-color: var(--glow); }
+  .form textarea { min-height: 120px; resize: vertical; }
+  .form .btn { align-self: flex-start; }
+  /* ---------- Scroll lateral ---------- */
+  .hs { position: relative; margin-left: calc(50% - 50vw); width: 100vw; }
+  .hs-stick { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: clamp(28px, 6vh, 56px); }
+  .hs-head, .hs-prog { padding-left: max(16px, calc((100vw - 1080px) / 2), env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hs-track { display: flex; gap: 16px; width: max-content; padding-left: max(16px, calc((100vw - 1080px) / 2), env(safe-area-inset-left, 0px)); padding-right: max(16px, calc((100vw - 1080px) / 2)); will-change: transform; }
+  .card {
+    flex: none; width: min(78vw, 340px); min-height: 300px; display: flex; flex-direction: column; gap: 12px;
+    padding: 26px; border-radius: 20px; border: 1px solid rgba(185, 160, 255, 0.22);
+    background: linear-gradient(160deg, rgba(40, 20, 90, 0.38), rgba(8, 6, 20, 0.55)); backdrop-filter: blur(8px);
+  }
+  .card.tool { min-height: 240px; }
+  .card h3 { margin: 0; font-size: clamp(1.7rem, 6vw, 2.2rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; text-wrap: balance; }
+  .card p { margin: 0; color: #bdbbd2; font-size: 1rem; line-height: 1.5; }
+  .meter { margin-top: auto; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #6a2cff, #b9a0ff 70%, #5fe0d0); transition: width 1.5s cubic-bezier(.2,.7,.2,1) 0.15s; }
+  .card.on .meter i { width: var(--w); }
+  .pct { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.12em; color: var(--glow); font-variant-numeric: tabular-nums; }
+  .hs-head h2 { margin: 0; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-size: clamp(2.3rem, 8.4vw, 4rem); }
+  .hs-prog { height: 1px; }
+  .hs-prog i { display: block; height: 1px; width: 100%; background: linear-gradient(90deg, var(--glow), transparent); transform-origin: left; transform: scaleX(0); }
+  .nogl .hs-stick { position: static; height: auto; overflow-x: auto; }
+  @media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+  .foot { text-align: center; color: var(--dim); font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; }
+  .rv { opacity: 0; filter: blur(14px); transform: translateY(22px); transition: opacity 0.95s cubic-bezier(.2,.7,.2,1) var(--d, 0s), filter 0.95s cubic-bezier(.2,.7,.2,1) var(--d, 0s), transform 0.95s cubic-bezier(.2,.7,.2,1) var(--d, 0s); }
+  .rv.in { opacity: 1; filter: none; transform: none; }
+  .noio .rv { opacity: 1; filter: none; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .rv { transition: none; } .rule { transition: none; } }
+  .fin { top: 50%; transform: translateY(-50%); }
+  .fin p { margin: 0; }
+  .fin .hi { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+  .fin h1 {
+    margin: 14px 0 12px; font-weight: 700; letter-spacing: -0.04em; line-height: 0.98;
+    font-size: clamp(2.8rem, 13vw, 7rem); text-wrap: balance;
+  }
+  .fin .role { font-size: clamp(1rem, 4vw, 1.4rem); color: #d6d4e6; font-weight: 500; }
+  .links { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .links a {
+    pointer-events: auto; color: var(--fg); text-decoration: none;
+    border: 1px solid rgba(185, 160, 255, 0.45); padding: 10px 18px; border-radius: 999px;
+    font-size: 0.95rem; backdrop-filter: blur(6px); background: rgba(10, 8, 24, 0.35);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .links a:hover, .links a:focus-visible { background: rgba(123, 61, 255, 0.35); border-color: var(--glow); outline: none; }
+  .nogl .t { position: static; transform: none; margin: 18vh 0; opacity: 1 !important; filter: none !important; visibility: visible !important; }
+  .nogl .stage { position: static; }
+  .skip {
+    position: fixed; z-index: 5; top: calc(env(safe-area-inset-top, 0px) + 16px); right: max(16px, env(safe-area-inset-right, 0px));
+    color: var(--fg); text-decoration: none; font-size: 0.85rem;
+    border: 1px solid rgba(185, 160, 255, 0.45); padding: 8px 16px; border-radius: 999px;
+    background: rgba(10, 8, 24, 0.45); backdrop-filter: blur(6px);
+    transition: opacity 0.4s, background 0.2s, border-color 0.2s;
+  }
+  .skip:hover, .skip:focus-visible { background: rgba(123, 61, 255, 0.35); border-color: var(--glow); outline: none; }
+  .skip.gone { opacity: 0; pointer-events: none; }
+  .nogl #gl, .nogl .hint, .nogl .skip { display: none; }
+  .nogl #track { height: auto; }
+  @media (prefers-reduced-motion: reduce) { .hint i { animation: none; opacity: 0.7; transform: none; } }
+
+  /* ---------- Proyectos apilados (scroll lateral) ---------- */
+  .stk { position: relative; margin-left: calc(50% - 50vw); width: 100vw; height: calc(100vh + var(--n) * 75vh); }
+  .stk-stick { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: clamp(14px, 3vh, 32px);
+    padding-left: max(16px, calc((100vw - 1080px) / 2), env(safe-area-inset-left, 0px)); padding-right: max(16px, calc((100vw - 1080px) / 2), env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+  .stk-head h2 { margin: 0; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-size: clamp(2.3rem, 8.4vw, 4rem); }
+  .stk-stage { position: relative; width: 100%; height: min(66vh, 540px); }
+  .pcard { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); gap: clamp(16px, 3vw, 40px); padding: clamp(14px, 3vw, 32px); box-sizing: border-box;
+    border-radius: 24px; border: 1px solid rgba(185, 160, 255, 0.3); background: linear-gradient(160deg, #1d1048, #0b0818); box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.5); will-change: transform; }
+  .pinfo { display: flex; flex-direction: column; justify-content: center; gap: 14px; min-width: 0; }
+  .pinfo h3 { margin: 0; font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.04; text-wrap: balance; }
+  .pinfo p { margin: 0; color: #cfcde0; font-size: clamp(0.92rem, 2.6vw, 1.05rem); line-height: 1.5; }
+  .pinfo .plinks { margin-top: 4px; }
+  .pmock { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-radius: 14px; overflow: hidden; border: 1px solid rgba(185, 160, 255, 0.25); background: #000; }
+  .pbar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: rgba(255, 255, 255, 0.07); font-family: var(--font-mono); font-size: 0.7rem; color: var(--dim); }
+  .pbar b { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.28); flex: none; }
+  .pbar span { margin-left: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pview { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; text-align: center; padding: 16px; color: var(--ink, #fff);
+    background: radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.22), transparent 60%), linear-gradient(135deg, var(--c1), var(--c2)); }
+  .pview strong { display: block; font-size: clamp(1.4rem, 4.6vw, 3rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; text-wrap: balance; }
+  .pview em { display: block; margin-top: 8px; font-style: normal; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.85; }
+  .pview .sk { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; gap: 10px; }
+  .pview .sk i { flex: 1; height: 28px; border-radius: 8px; background: currentColor; opacity: 0.14; }
+  .stk-prog { height: 1px; }
+  .stk-prog i { display: block; height: 1px; width: 100%; background: linear-gradient(90deg, var(--glow), transparent); transform-origin: left; transform: scaleX(0); }
+  @media (max-width: 760px) {
+    .stk-stage { height: min(74vh, 600px); }
+    .pcard { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
+    .pinfo { gap: 10px; justify-content: flex-start; }
+    .pview .sk { display: none; }
+  }
+  .nogl .stk { height: auto; }
+  .nogl .stk-stick { position: static; height: auto; overflow: visible; }
+  .nogl .stk-stage { height: auto; display: flex; flex-direction: column; gap: 20px; }
+  .nogl .pcard { position: relative; transform: none !important; filter: none !important; visibility: visible !important; }
+</style>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="stage" id="stage">
+  <p class="t title" id="t1" aria-hidden="true"></p>
+  <div class="t hint" id="hint"><span>desliza</span><i></i></div>
+  <p class="t sub" id="t2" aria-hidden="true"></p>
+  <p class="t sub" id="t3" aria-hidden="true"></p>
+  <p class="t sub" id="t4" style="top:58%" aria-hidden="true"></p>
+  <section class="t fin" id="fin">
+    <p class="hi" id="finHi">Hola, soy</p>
+    <h1 id="finName">Javier Antón</h1>
+    <p class="role" id="finRole">Desarrollador web</p>
+    <nav class="links" id="finLinks"></nav>
+  </section>
+</div>
+<div id="track"></div>
+<a class="skip" id="skip" href="#cv">Ir al CV ↓</a>
+
+<main id="cv">
+  <div class="wrap">
+
+    <section class="sec" id="perfil">
+      <header class="rv"><p class="eyebrow">Sobre mí</p><h2>Perfil</h2><span class="rule"></span></header>
+      <div>
+        <p class="lead rv" style="--d:.1s">Desarrollador web formándose en el Grado Superior en Desarrollo de Aplicaciones Web de ESIC University, con conocimientos en HTML, CSS, JavaScript, Python y Java y experiencia en prácticas diseñando y manteniendo bases de datos.</p>
+        <p class="lead dim rv" style="--d:.2s">Busco incorporarme a un equipo de desarrollo donde aportar desde el primer día y seguir creciendo como programador.</p>
+      </div>
+    </section>
+
+    <section class="stk" id="proyectos" style="--n:3" aria-label="Proyectos">
+      <div class="stk-stick">
+        <header class="stk-head"><p class="eyebrow">Lo que he hecho</p><h2>Proyectos</h2><span class="rule in"></span></header>
+        <div class="stk-stage">
+        <article class="pcard" style="--c1:#0f3d2a;--c2:#2f8a50;--ink:#fff">
+          <div class="pinfo">
+            <h3>JAVAMA</h3>
+            <p>Web de una empresa de jardinería: diseño, mantenimiento y poda en altura, con galería de proyectos, servicios y formulario de presupuesto.</p>
+            <ul class="tags"><li>Web de empresa</li><li>Formulario de presupuesto</li><li>WhatsApp</li></ul>
+            <div class="plinks"><a class="btn solid" href="https://jardineriajavama.vercel.app/" target="_blank" rel="noopener">Ver sitio ↗</a></div>
+          </div>
+          <div class="pmock" aria-hidden="true">
+            <div class="pbar"><b></b><b></b><b></b><span>jardineriajavama.vercel.app</span></div>
+            <div class="pview"><div><strong>JAVAMA</strong><em>Jardinería profesional</em></div><div class="sk"><i></i><i></i><i></i></div></div>
+          </div>
+        </article>
+        <article class="pcard" style="--c1:#2b2f3a;--c2:#b9730f;--ink:#fff">
+          <div class="pinfo">
+            <h3>Construcciones Paco Coca</h3>
+            <p>Web de una constructora de Madrid con servicios de obra residencial y comercial, reformas integrales, proyectos destacados, valoraciones y contacto.</p>
+            <ul class="tags"><li>Web de empresa</li><li>Formulario de contacto</li><li>Instagram y WhatsApp</li></ul>
+            <div class="plinks"><a class="btn solid" href="https://construcciones-paco-coca.vercel.app/" target="_blank" rel="noopener">Ver sitio ↗</a></div>
+          </div>
+          <div class="pmock" aria-hidden="true">
+            <div class="pbar"><b></b><b></b><b></b><span>construcciones-paco-coca.vercel.app</span></div>
+            <div class="pview"><div><strong>Construcciones Paco Coca</strong><em>Construcción y reformas · Madrid</em></div><div class="sk"><i></i><i></i><i></i></div></div>
+          </div>
+        </article>
+        <article class="pcard" style="--c1:#ffd2bd;--c2:#ff9d8a;--ink:#3a1420">
+          <div class="pinfo">
+            <h3>Nosotros</h3>
+            <p>Aplicación web pensada para que una pareja se organice junta. Diseño sobrio al estilo de las apps de iPhone, con modo pantalla completa en móvil.</p>
+            <ul class="tags"><li>Web app</li><li>Diseño para móvil</li></ul>
+            <div class="plinks"><a class="btn solid" href="https://nosotros-peach.vercel.app/" target="_blank" rel="noopener">Ver sitio ↗</a></div>
+          </div>
+          <div class="pmock" aria-hidden="true">
+            <div class="pbar"><b></b><b></b><b></b><span>nosotros-peach.vercel.app</span></div>
+            <div class="pview"><div><strong>Nosotros</strong><em>Organización para parejas</em></div><div class="sk"><i></i><i></i><i></i></div></div>
+          </div>
+        </article>
+        </div>
+        <div class="stk-prog"><i></i></div>
+      </div>
+    </section>
+
+    <section class="sec" id="experiencia">
+      <header class="rv"><p class="eyebrow">Trayectoria</p><h2>Experiencia</h2><span class="rule"></span></header>
+      <div>
+        <article class="item rv">
+          <p class="when">Abr 2026 — Jun 2026</p>
+          <h3>Medinas Management</h3>
+          <span class="role">Desarrollador web · Prácticas</span>
+          <ul>
+            <li>Diseño y creación de bases de datos en <span class="ph">[MySQL / Access / …]</span> para organizar la información de la empresa.</li>
+            <li>Actualización y mantenimiento de los datos con <span class="ph">[herramienta: SQL, Excel con macros…]</span>.</li>
+            <li>Contacto y comunicación con clientes.</li>
+          </ul>
+        </article>
+        <article class="item rv">
+          <p class="when">May 2024 — May 2025</p>
+          <h3>Arsem Servicios Energéticos</h3>
+          <span class="role">Reclutador · Selección de personal</span>
+          <ul>
+            <li>Gestión de fuentes de reclutamiento (InfoJobs, LinkedIn), criba de currículums y preselección telefónica.</li>
+            <li>Búsqueda activa de perfiles comerciales y coordinación de entrevistas telefónicas y presenciales.</li>
+          </ul>
+          <p class="d">Un año de experiencia que aporta organización, comunicación y trabajo con plataformas digitales.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="sec" id="formacion">
+      <header class="rv"><p class="eyebrow">Estudios</p><h2>Formación</h2><span class="rule"></span></header>
+      <div>
+        <article class="item rv">
+          <p class="when">Sept 2025 — Actualidad</p>
+          <h3>ESIC University</h3>
+          <span class="role">Grado Superior en Desarrollo de Aplicaciones Web</span>
+          <p class="d">Programación, desarrollo web en entorno cliente y servidor, bases de datos y despliegue de aplicaciones.</p>
+        </article>
+        <article class="item rv">
+          <p class="when"><span class="ph">[Certificado · mes año]</span></p>
+          <h3>Microsoft Azure AZ-900</h3>
+          <span class="role">Azure Fundamentals</span>
+          <p class="d">Fundamentos de servicios en la nube con Microsoft Azure.</p>
+        </article>
+        <article class="item rv">
+          <p class="when"><span class="ph">[Mes año]</span></p>
+          <h3>Curso de automatización</h3>
+          <span class="role"><span class="ph">[Entidad que lo imparte]</span></span>
+          <p class="d"><span class="ph">[Qué aprendió: herramientas y algo que automatizó]</span></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="hs" id="lenguajes" data-dir="r" aria-label="Lenguajes">
+      <div class="hs-stick">
+        <header class="hs-head"><p class="eyebrow">Skills</p><h2>Lenguajes</h2><span class="rule in"></span></header>
+        <div class="hs-track"><article class="card"><h3>HTML5 y CSS3</h3><p>Maquetación y estilos de páginas e interfaces web</p><div class="meter"><i style="--w:90%"></i></div><span class="pct">90%</span></article><article class="card"><h3>JavaScript</h3><p>Interactividad y lógica en el navegador</p><div class="meter"><i style="--w:80%"></i></div><span class="pct">80%</span></article><article class="card"><h3>Python</h3><p>Programación y desarrollo de scripts</p><div class="meter"><i style="--w:75%"></i></div><span class="pct">75%</span></article><article class="card"><h3>Java</h3><p>Programación orientada a objetos</p><div class="meter"><i style="--w:70%"></i></div><span class="pct">70%</span></article></div>
+        <div class="hs-prog"><i></i></div>
+      </div>
+    </section>
+
+    <section class="hs" id="herramientas" data-dir="l" aria-label="Herramientas">
+      <div class="hs-stick">
+        <header class="hs-head"><p class="eyebrow">Skills</p><h2>Herramientas</h2><span class="rule in"></span></header>
+        <div class="hs-track"><article class="card tool"><h3>Visual Studio Code</h3><p>Editor principal para desarrollo web</p></article><article class="card tool"><h3>IntelliJ IDEA</h3><p>Desarrollo y depuración de proyectos en Java</p></article><article class="card tool"><h3>PyCharm</h3><p>Desarrollo y depuración de proyectos en Python</p></article><article class="card tool"><h3>Docker</h3><p>Contenedores para entornos de desarrollo</p></article></div>
+        <div class="hs-prog"><i></i></div>
+      </div>
+    </section>
+
+    <section class="sec" id="bd">
+      <header class="rv"><p class="eyebrow">Skills</p><h2>Bases de datos</h2><span class="rule"></span></header>
+      <div class="skills"><div class="rv">
+        <div class="skill"><b>Diseño, creación y mantenimiento</b><span>Modelado de datos y gestión de la información</span></div>
+      </div></div>
+    </section>
+
+    <section class="sec" id="idiomas">
+      <header class="rv"><p class="eyebrow">Y además</p><h2>Idiomas y disponibilidad</h2><span class="rule"></span></header>
+      <div>
+        <div class="item rv"><p class="when">Idiomas</p><h3>Español: nativo</h3><span class="role">Inglés: <span class="ph">[B1 / B2]</span></span></div>
+        <div class="item rv"><p class="when">Disponibilidad</p><h3>Disponibilidad total e incorporación inmediata</h3></div>
+      </div>
+    </section>
+
+    <section class="sec" id="contacto">
+      <header class="rv"><p class="eyebrow">Hablemos</p><h2>Contacto</h2><span class="rule"></span></header>
+      <div class="contact">
+        <div class="row rv"><div><small>Email</small><a class="v" href="mailto:javieranton1717@gmail.com">javieranton1717@gmail.com</a></div></div>
+        <div class="row rv"><div><small>LinkedIn</small><a class="v" href="https://linkedin.com/in/javierantoncoca" target="_blank" rel="noopener">linkedin.com/in/javierantoncoca</a></div></div>
+        <div class="row rv"><div><small>GitHub</small><a class="v" href="https://github.com/javiantonc" target="_blank" rel="noopener">github.com/javiantonc</a></div></div>
+        <div class="row rv"><div><small>Ubicación</small><span class="v">Madrid, España</span></div></div>
+        <div class="row rv"><div><small>Currículum</small><span class="v">CV en PDF</span></div><a class="btn solid" href="cv-javier-anton.pdf" download>Descargar ↓</a></div>
+        <form class="form rv" id="form">
+          <label>Nombre<input name="nombre" required autocomplete="name"></label>
+          <label>Email<input name="email" type="email" required autocomplete="email"></label>
+          <label>Mensaje<textarea name="mensaje" required></textarea></label>
+          <button class="btn solid" type="submit">Enviar mensaje</button>
+        </form>
+      </div>
+    </section>
+
+    <p class="foot rv">Javier Antón · Desarrollador web</p>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ---------- TEXTOS: edita aquí tu contenido ---------- */
+const CONFIG = {
+  titulo: ["Antes buscaba", "talento"],
+  frase2: "Hasta que la curiosidad por cómo funciona todo ya no cabía en una entrevista",
+  frase3: "Aprendí a poner orden en el caos de los datos",
+  frase4: "Y ahora construyo, línea a línea",
+  saludo: "Hola, soy",
+  nombre: "Javier Antón",
+  rol: "Desarrollador web",
+  enlaces: [
+    { texto: "Descargar CV (PDF)", href: "cv-javier-anton.pdf", download: true },
+    { texto: "GitHub", href: "https://github.com/javiantonc" },
+    { texto: "LinkedIn", href: "https://linkedin.com/in/javierantoncoca" }
+  ]
+};
+
+/* ---------- Shaders ---------- */
+const NOISE3 = `
+float h13(vec3 p){ p=fract(p*.1031); p+=dot(p,p.zyx+31.32); return fract((p.x+p.y)*p.z); }
+float vn3(vec3 x){
+  vec3 i=floor(x), f=fract(x); f=f*f*(3.-2.*f);
+  float a=h13(i), b=h13(i+vec3(1,0,0)), c=h13(i+vec3(0,1,0)), d=h13(i+vec3(1,1,0));
+  float e=h13(i+vec3(0,0,1)), g=h13(i+vec3(1,0,1)), h=h13(i+vec3(0,1,1)), k=h13(i+vec3(1,1,1));
+  return mix(mix(mix(a,b,f.x),mix(c,d,f.x),f.y), mix(mix(e,g,f.x),mix(h,k,f.x),f.y), f.z);
+}`;
+
+const BUBBLE_VS = NOISE3 + `
+uniform float uTime, uAmp, uScale;
+varying vec3 vView; varying vec3 vObj;
+void main(){
+  vec3 p = position;
+  float t = uTime;
+  float lobes = vn3(p*1.1 + vec3(0.,0.,t*.22)) - .5;
+  float mid   = vn3(p*2.3 + vec3(t*.3,0.,0.)) - .5;
+  float fine  = vn3(p*5.0 - vec3(0.,t*.45,0.)) - .5;
+  float d = (lobes*1.5 + mid*.9 + fine*.28) * uAmp;
+  vec3 np = p * (1. + d) * uScale;
+  vObj = p;
+  vec4 mv = modelViewMatrix * vec4(np, 1.);
+  vView = mv.xyz;
+  gl_Position = projectionMatrix * mv;
+}`;
+const BUBBLE_FS = NOISE3 + `
+uniform float uTime, uAlpha;
+varying vec3 vView; varying vec3 vObj;
+void main(){
+  vec3 N = normalize(cross(dFdx(vView), dFdy(vView)));
+  vec3 V = normalize(-vView);
+  if (dot(N,V) < 0.) N = -N;
+  float fr = pow(1. - clamp(dot(N,V),0.,1.), 2.0);
+  float k = vn3(vObj*2.2 + uTime*.18);
+  vec3 c1 = vec3(.28,.06,.95), c2 = vec3(.80,.16,.95), c3 = vec3(.08,.85,.78);
+  vec3 col = mix(c1, c2, smoothstep(.25,.75,k));
+  col = mix(col, c3, smoothstep(.45,.9,fr*(.4+k*1.3)) * .85);
+  float spec = pow(clamp(dot(reflect(-V,N), normalize(vec3(-.5,.7,.6))),0.,1.), 24.);
+  float a = clamp(.05 + fr*1.15, 0., 1.);
+  col = col*(.35 + fr*1.5) + vec3(.7,.6,1.)*spec*.5;
+  gl_FragColor = vec4(col, a*uAlpha);
+}`;
+
+const DUST_VS = `
+attribute vec4 aRnd; attribute vec3 aDir;
+uniform float uSpread, uSwirl, uAlpha, uTime, uPx;
+varying float vA; varying vec3 vC;
+void main(){
+  float rr = .35 + .65*aRnd.x;
+  float R = uSpread * rr * (.4 + 1.6*aRnd.y);
+  vec3 p = aDir * R;
+  float ang = uSwirl * (1./(R+.12)) * (.5+aRnd.z) + uTime*.02*(aRnd.w-.5);
+  float c = cos(ang), s = sin(ang);
+  p.xy = mat2(c,-s,s,c) * p.xy;
+  vec4 mv = modelViewMatrix * vec4(p,1.);
+  gl_Position = projectionMatrix * mv;
+  gl_PointSize = (1.1 + aRnd.z*2.6) * uPx * (5. / max(-mv.z, .5));
+  float tw = .6 + .4*sin(uTime*(1.+aRnd.w*3.) + aRnd.x*30.);
+  vA = uAlpha * tw * (.35 + .65*aRnd.y);
+  vC = mix(vec3(.82,.9,1.), mix(vec3(.6,1.,.85), vec3(.72,.55,1.), aRnd.w), step(.5,aRnd.x));
+}`;
+const DUST_FS = `
+varying float vA; varying vec3 vC;
+void main(){
+  float d = length(gl_PointCoord - .5);
+  float a = smoothstep(.5, 0., d);
+  gl_FragColor = vec4(vC, a*a*vA*1.6);
+}`;
+
+const BG_VS = `void main(){ gl_Position = vec4(position.xy, 0., 1.); }`;
+const BG_FS = `
+precision highp float;
+uniform vec2 uRes; uniform float uTime, uZ;
+uniform float uChaos, uStars, uStar, uPlasma, uCloud, uCore, uFlashR, uFlashI, uWash, uDim, uOver;
+float h21(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vn2(vec2 p){
+  vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y);
+}
+float fbm(vec2 p){
+  float a=.5, s=0.; mat2 m=mat2(1.6,1.2,-1.2,1.6);
+  for(int i=0;i<5;i++){ s+=a*vn2(p); p=m*p; a*=.5; }
+  return s;
+}
+vec3 starLayer(vec2 uv, float sc, float seed, float size, float dens, float pw){
+  vec2 g=uv*sc; vec2 id=floor(g); vec2 f=fract(g)-.5;
+  float h=h21(id+seed); if(h>dens) return vec3(0.);
+  vec2 o=(vec2(h21(id+seed+1.7),h21(id+seed+9.1))-.5)*.6;
+  float d=length(f-o);
+  float b=pow(smoothstep(size,0.,d), pw);
+  float tw=.65+.35*sin(uTime*(1.+h*4.)+h*40.);
+  vec3 tint=mix(vec3(.78,.88,1.), .62+.38*cos(6.283*(h*5.+vec3(0.,.33,.66))), .22);
+  return tint*b*tw*(.4+.6*h/dens)*1.4;
+}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y;
+  float unit=min(uRes.x/uRes.y,1.);
+  float fr=length(uv)/unit;
+  vec3 col=vec3(0.);
+
+  if(uChaos>.001){
+    vec2 p=uv*2.2; float t=uTime*.03;
+    float q=fbm(p+t); float r=fbm(p+3.*q+vec2(1.7,9.2)-t); float f=fbm(p+3.*r);
+    vec3 c=mix(vec3(.012,.012,.03), vec3(.06,.06,.15), smoothstep(.3,.8,f));
+    c+=vec3(.30,.04,.10)*smoothstep(.62,.9,r)*.42;
+    c+=vec3(.05,.10,.45)*smoothstep(.7,0.,length(uv-vec2(-.22*unit,0.)))*.28;
+    col+=c*uChaos;
+  }
+  if(uStars>.001){
+    vec2 su=uv*(1.+uZ*uZ*2.)+vec2(0.,uOver*.25);
+    vec3 s=starLayer(su,34.,1.,.07,.33,2.)+starLayer(su*1.7+3.,58.,5.,.06,.28,2.)*.8;
+    col+=s*uStars;
+  }
+  if(uStar>.001){
+    float sc=1.+uZ*uZ*60.;
+    float r=length(uv)/sc;
+    float core=exp(-r*70.)*1.6+exp(-r*14.)*.45;
+    float spikes=exp(-abs(uv.x)/sc*150.)*exp(-abs(uv.y)*2.5)+exp(-abs(uv.y)/sc*150.)*exp(-abs(uv.x)*2.5);
+    float ring=smoothstep(.02,0.,abs(r-.055))*.5;
+    vec3 sc3=mix(vec3(.25,.45,1.),vec3(1.),clamp(core,0.,1.));
+    col+=sc3*(core+spikes*.7+ring)*uStar;
+  }
+  if(uPlasma>.001){
+    vec2 p=uv*mix(5.5,2.4,uZ); float t=uTime*.12;
+    vec2 q=vec2(fbm(p+t), fbm(p+vec2(5.2,1.3)-t));
+    float f=fbm(p+3.5*q);
+    vec3 c=mix(vec3(.02,.10,.75), vec3(.30,.55,1.), smoothstep(.2,.6,f));
+    c=mix(c, vec3(.95,.98,1.), smoothstep(.55,.85,f)*(.5+.5*q.x));
+    c*=.55+.9*smoothstep(.2,.9,f);
+    col=mix(col,c,uPlasma);
+  }
+  if(uCloud>.001){
+    vec2 p=uv*1.6+vec2(uZ*.2,uOver*.18);
+    float f=fbm(p+uTime*.012); float f2=fbm(p*2.+f*2.);
+    vec3 c=mix(vec3(.03,.06,.12), vec3(.30,.45,.68), smoothstep(.25,.7,f*.6+f2*.4));
+    c*=.6+.7*smoothstep(0.,.6,length(uv));
+    vec2 bu=uv*(1.+uZ*.6)+vec2(0.,uOver*.4);
+    vec3 b=starLayer(bu,7.,3.,.30,.5,2.)*1.1+starLayer(bu*1.9+7.,12.,8.,.24,.45,2.)*.8+starLayer(bu*3.1+2.,26.,2.,.09,.3,1.5)*.6;
+    col=col*(1.-uCloud)+(c+b*vec3(.8,.9,1.))*uCloud;
+  }
+  // colapso y destello
+  float cg=exp(-fr*45.)*1.4+exp(-fr*9.)*.35;
+  col+=mix(vec3(.55,.35,1.),vec3(1.),clamp(cg,0.,1.))*cg*uCore;
+  col+=vec3(.5,.35,1.)*smoothstep(.12,.0,abs(fr-.12))*.35*uCore*(1.-uFlashI);
+  if(uFlashI>.001){
+    float disc=smoothstep(uFlashR, uFlashR*.82, fr);
+    float halo=exp(-max(fr-uFlashR,0.)*5.);
+    col=col*(1.-disc*uFlashI)+vec3(1.)*disc*uFlashI+vec3(.42,.22,1.)*halo*.85*uFlashI;
+  }
+  col+=vec3(.28,.16,.6)*uWash*(.4+.6*exp(-fr*1.5));
+  col*=1.-min(uDim,1.3)*.55;
+  col+=(h21(gl_FragCoord.xy+fract(uTime))-.5)/255.;
+  gl_FragColor=vec4(col,1.);
+}`;
+
+/* ---------- Utilidades ---------- */
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ss = (a, b, x) => { x = clamp((x - a) / (b - a)); return x * x * (3 - 2 * x); };
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- Texto ---------- */
+$('t1').innerHTML = CONFIG.titulo.map(l => `<span>${l}</span>`).join('');
+$('t2').textContent = CONFIG.frase2;
+$('t3').textContent = CONFIG.frase3;
+$('t4').textContent = CONFIG.frase4;
+$('finHi').textContent = CONFIG.saludo;
+$('finName').textContent = CONFIG.nombre;
+$('finRole').textContent = CONFIG.rol;
+CONFIG.enlaces.forEach(e => {
+  const a = document.createElement('a'); a.href = e.href; a.textContent = e.texto;
+  if (e.download) a.setAttribute('download', ''); else { a.target = '_blank'; a.rel = 'noopener'; }
+  $('finLinks').appendChild(a);
+});
+const TEXTS = [
+  { el: $('t1'),   out: [.05, .11], keep: 'translateY(-50%)' },
+  { el: $('hint'), out: [.01, .05] },
+  { el: $('t2'),   in: [.15, .21], out: [.30, .35] },
+  { el: $('t3'),   in: [.53, .59], out: [.62, .67] },
+  { el: $('t4'),   in: [.80, .86], out: [.93, .96] },
+  { el: $('fin'),  in: [.965, 1.0], keep: 'translateY(-50%)', over: true }
+];
+
+/* ---------- Botón "Ir al CV" ---------- */
+$('skip').addEventListener('click', e => {
+  e.preventDefault();
+  $('cv').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+});
+addEventListener('scroll', () => {
+  $('skip').classList.toggle('gone', scrollY > $('track').offsetHeight - innerHeight * 1.2);
+}, { passive: true });
+
+/* ---------- Formulario: abre el correo con el mensaje ya escrito ---------- */
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const body = `${f.get('mensaje')}\n\n— ${f.get('nombre')} (${f.get('email')})`;
+  location.href = `mailto:javieranton1717@gmail.com?subject=${encodeURIComponent('Contacto desde el portfolio')}&body=${encodeURIComponent(body)}`;
+});
+
+/* ---------- Apariciones del CV ---------- */
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+} else document.body.classList.add('noio');
+
+/* ---------- Scroll lateral: el scroll vertical mueve las tarjetas ---------- */
+(() => {
+  const strips = [...document.querySelectorAll('.hs')].map(el => ({
+    el, track: el.querySelector('.hs-track'), bar: el.querySelector('.hs-prog i'),
+    dir: el.dataset.dir, cards: [...el.querySelectorAll('.card')], max: 0
+  }));
+  function measure() {
+    strips.forEach(s => {
+      s.max = Math.max(0, s.track.scrollWidth - innerWidth);
+      s.el.style.height = (s.max + innerHeight) + 'px';
+    });
+    update();
+  }
+  function update() {
+    strips.forEach(s => {
+      const r = s.el.getBoundingClientRect();
+      const prog = s.max > 0 ? clamp(-r.top / s.max) : 0;
+      const x = s.dir === 'r' ? -prog * s.max : -(1 - prog) * s.max;
+      s.track.style.transform = `translate3d(${x.toFixed(1)}px,0,0)`;
+      s.bar.style.transform = `scaleX(${(s.dir === 'r' ? prog : 1 - prog).toFixed(3)})`;
+      if (r.top < innerHeight && r.bottom > 0) s.cards.forEach(c => {
+        const cr = c.getBoundingClientRect();
+        if (cr.left < innerWidth * 0.92 && cr.right > 0) c.classList.add('on');
+      });
+    });
+  }
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', measure);
+  addEventListener('load', measure);
+  measure();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+})();
+
+/* ---------- Proyectos: las tarjetas entran desde la derecha y se apilan ---------- */
+(() => {
+  const el = $('proyectos'), cards = [...el.querySelectorAll('.pcard')], n = cards.length, bar = el.querySelector('.stk-prog i');
+  const HOLD = 0.5; // un poco de pausa con todas apiladas antes de seguir bajando
+  function update() {
+    if (document.body.classList.contains('nogl')) return;
+    const r = el.getBoundingClientRect(), max = Math.max(1, el.offsetHeight - innerHeight);
+    const p = clamp(-r.top / max), t = p * (n - 1 + HOLD);
+    const e = cards.map((_, i) => i === 0 ? 1 : 1 - Math.pow(1 - clamp(t - (i - 1)), 3));
+    cards.forEach((c, i) => {
+      let cover = 0; for (let j = i + 1; j < n; j++) cover += e[j];
+      const x = (1 - e[i]) * innerWidth * 1.05;
+      c.style.transform = `translate3d(${x.toFixed(1)}px,${(-cover * 16).toFixed(1)}px,0) scale(${(1 - cover * 0.045).toFixed(4)})`;
+      c.style.filter = cover > 0.01 ? `brightness(${(1 - Math.min(cover, 2) * 0.22).toFixed(3)})` : 'none';
+      c.style.visibility = e[i] <= 0.001 ? 'hidden' : 'visible';
+      c.style.zIndex = i + 1;
+    });
+    bar.style.transform = `scaleX(${p.toFixed(3)})`;
+  }
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', update);
+  update();
+})();
+
+/* ---------- Escena ---------- */
+// Dispositivos modestos: menos partículas, menos resolución
+const lite = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: !lite, powerPreference: 'high-performance' });
+} catch (e) { renderer = null; }
+
+if (!renderer) {
+  document.body.classList.add('nogl');
+} else {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lite ? 1 : 1.6));
+  renderer.setClearColor(0x000000, 1);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+  camera.position.z = 5;
+
+  const bg = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2),
+    new THREE.ShaderMaterial({
+      vertexShader: BG_VS, fragmentShader: BG_FS, depthTest: false, depthWrite: false,
+      uniforms: {
+        uRes: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 }, uZ: { value: 0 },
+        uChaos: { value: 0 }, uStars: { value: 0 }, uStar: { value: 0 }, uPlasma: { value: 0 },
+        uCloud: { value: 0 }, uCore: { value: 0 }, uFlashR: { value: 0.01 }, uFlashI: { value: 0 },
+        uWash: { value: 0 }, uDim: { value: 0 }, uOver: { value: 0 }
+      }
+    })
+  );
+  bg.frustumCulled = false; bg.renderOrder = -10; scene.add(bg);
+
+  const bubbleMat = new THREE.ShaderMaterial({
+    vertexShader: BUBBLE_VS, fragmentShader: BUBBLE_FS, transparent: true, depthWrite: false, depthTest: false,
+    side: THREE.DoubleSide, blending: THREE.AdditiveBlending, extensions: { derivatives: true },
+    uniforms: { uTime: { value: 0 }, uAmp: { value: 0.2 }, uScale: { value: 0.7 }, uAlpha: { value: 1 } }
+  });
+  const bubble = new THREE.Mesh(new THREE.IcosahedronGeometry(1, lite ? 24 : 44), bubbleMat);
+  bubble.renderOrder = 1; scene.add(bubble);
+
+  const N = lite ? 2500 : 7000, dir = new Float32Array(N * 3), rnd = new Float32Array(N * 4);
+  for (let i = 0; i < N; i++) {
+    const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, s = Math.sqrt(1 - u * u);
+    dir.set([s * Math.cos(a), s * Math.sin(a), u * 0.6], i * 3);
+    rnd.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4);
+  }
+  const pg = new THREE.BufferGeometry();
+  pg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+  pg.setAttribute('aDir', new THREE.BufferAttribute(dir, 3));
+  pg.setAttribute('aRnd', new THREE.BufferAttribute(rnd, 4));
+  const dustMat = new THREE.ShaderMaterial({
+    vertexShader: DUST_VS, fragmentShader: DUST_FS, transparent: true, depthWrite: false, depthTest: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uSpread: { value: 1 }, uSwirl: { value: 0 }, uAlpha: { value: 0 }, uTime: { value: 0 }, uPx: { value: 1 } }
+  });
+  const dust = new THREE.Points(pg, dustMat);
+  dust.frustumCulled = false; dust.renderOrder = 2; scene.add(dust);
+
+  let baseR = 0.7;
+  const sz = new THREE.Vector2();
+  function resize() {
+    renderer.setSize(innerWidth, innerHeight, false);
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.getDrawingBufferSize(sz);
+    bg.material.uniforms.uRes.value.copy(sz);
+    dustMat.uniforms.uPx.value = renderer.getPixelRatio();
+    const visH = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    baseR = Math.min(0.85, visH * camera.aspect * 0.36);
+  }
+  addEventListener('resize', resize); resize();
+
+  /* ---------- Bucle ---------- */
+  let ps = 0, last = performance.now(), t = 0;
+  const trackEl = $('track');
+  const heroEnd = () => Math.max(1, trackEl.offsetHeight - innerHeight);
+  const HOLD = 1.5; // pantallas de scroll que el nombre se queda fijo al final
+  const getP = () => clamp(scrollY / Math.max(1, heroEnd() - innerHeight * HOLD));
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    t += dt * (reduce ? 0.25 : 1);
+    ps += (getP() - ps) * (reduce ? 1 : 1 - Math.exp(-dt * 6));
+    const p = ps;
+    const U = bg.material.uniforms;
+
+    // burbuja
+    const shrink = ss(.08, .31, p);
+    bubbleMat.uniforms.uTime.value = t;
+    bubbleMat.uniforms.uScale.value = baseR * (1 - 0.93 * shrink * shrink * (3 - 2 * shrink));
+    bubbleMat.uniforms.uAmp.value = 0.2 + 0.35 * ss(.06, .3, p);
+    bubbleMat.uniforms.uAlpha.value = 1 - ss(.3, .35, p);
+    bubble.visible = p < 0.36;
+    bubble.rotation.y = t * 0.15 + p * 3; bubble.rotation.x = t * 0.1 + p * 2;
+
+    // polvo, implosión
+    const wide = baseR * 3.0 * (1 + ss(.1, .3, p) * .4);
+    const imp = ss(.3, .39, p);
+    dustMat.uniforms.uSpread.value = 0.02 + (wide - 0.02) * (1 - imp * imp);
+    dustMat.uniforms.uSwirl.value = 5.5 * imp;
+    dustMat.uniforms.uAlpha.value = ss(.1, .2, p) * (1 - ss(.395, .43, p));
+    dustMat.uniforms.uTime.value = t;
+    dust.visible = dustMat.uniforms.uAlpha.value > 0.001;
+
+    // destello
+    U.uCore.value = ss(.3, .38, p) * (1 - ss(.43, .47, p));
+    U.uFlashR.value = 0.01 + 0.32 * ss(.37, .43, p) + 0.2 * ss(.43, .5, p);
+    U.uFlashI.value = ss(.38, .41, p) * (1 - ss(.43, .5, p));
+    U.uWash.value = ss(.4, .43, p) * (1 - ss(.43, .52, p));
+
+    // caos y zoom de escala
+    const z = clamp((p - .62) / .33);
+    U.uZ.value = z;
+    U.uChaos.value = ss(.47, .56, p) * (1 - ss(.2, .4, z));
+    U.uStars.value = ss(.47, .55, p) * (1 - ss(.3, .45, z) * .0) * (1 - U.uPlasma.value * 0);
+    U.uStar.value = ss(0, .12, z) * (1 - ss(.22, .34, z)) * ss(.58, .64, p);
+    U.uPlasma.value = ss(.2, .3, z) * (1 - ss(.46, .62, z));
+    U.uCloud.value = ss(.46, .66, z);
+    U.uStars.value *= 1 - U.uPlasma.value;
+    // tramo del CV: el fondo sigue derivando y se oscurece para que se lea
+    const over = Math.max(0, (scrollY - heroEnd()) / innerHeight);
+    U.uOver.value = Math.min(over, 12);
+    U.uDim.value = ss(.9, 1, p) + 0.25 * ss(0, 1.2, over);
+    U.uTime.value = t;
+
+    // textos
+    for (const T of TEXTS) {
+      const v = (T.in ? ss(T.in[0], T.in[1], p) : 1) * (T.out ? 1 - ss(T.out[0], T.out[1], p) : 1) * (T.over ? 1 - ss(0, .45, over) : 1);
+      const s = T.el.style;
+      s.opacity = v; s.visibility = v < .01 ? 'hidden' : 'visible';
+      s.filter = v < .99 ? `blur(${((1 - v) * 14).toFixed(1)}px)` : 'none';
+      s.transform = `${T.keep || ''} translateY(${((1 - v) * 10).toFixed(1)}px)`;
+    }
+    $('fin').style.pointerEvents = p > .98 ? 'auto' : 'none';
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
